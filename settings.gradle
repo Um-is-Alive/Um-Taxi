@@ -1,0 +1,2 @@
+rootProject.name='Um-Taxi'
+include ':app'
