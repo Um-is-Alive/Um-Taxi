@@ -9,8 +9,11 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Base64;
 import android.util.Log;
+import android.view.ViewGroup;
+
 
 import java.security.MessageDigest;
+import net.daum.mf.map.api.MapView;
 
 public class MainActivity extends AppCompatActivity {
     @Override
@@ -18,7 +21,14 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+
+        MapView mapView = new MapView(this);
+
+        ViewGroup mapViewContainer = (ViewGroup) findViewById(R.id.map_view);
+        mapViewContainer.addView(mapView);
+
         try {
+
             PackageInfo info = getPackageManager().getPackageInfo("com.nextop.project.um_taxi", PackageManager.GET_SIGNATURES);
             for (Signature signature : info.signatures) {
                 MessageDigest md = MessageDigest.getInstance("SHA");
@@ -26,6 +36,7 @@ public class MainActivity extends AppCompatActivity {
                 Log.i("KeyHash:", Base64.encodeToString(md.digest(), Base64.DEFAULT));
             }
         } catch (Exception e) {
+
             Log.e("MainActivity", e.getStackTrace().toString());
         }
     }
