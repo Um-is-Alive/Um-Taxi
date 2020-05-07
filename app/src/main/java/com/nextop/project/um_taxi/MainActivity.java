@@ -23,6 +23,8 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 
+import com.nextop.project.um_taxi.location.MapLocationListener;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -40,9 +42,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         this.locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
 
-
-
-
         // 안드로이드에서 권한 확인이 의무화 되어서 작성된 코드! 개념만 이해
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED
@@ -51,7 +50,6 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
         }
-
 
         Location loc = this.locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
         latitude = loc.getLatitude();
@@ -63,10 +61,13 @@ public class MainActivity extends AppCompatActivity {
         mapViewContainer.addView(mapView);
 
         //내 위치로 지도 이동
-        mapView.setMapCenterPoint(MapPoint.mapPointWithGeoCoord(latitude, longitude), true);
+        LocationManager mLM = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        MapLocationListener mll = new MapLocationListener(mapView);
 
-        makerShow(mapView); //마커 표시 메소드
-
+        mLM.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
+                1000, 1, mll);
+        mLM.requestLocationUpdates(LocationManager.GPS_PROVIDER,
+                1000, 1, mll);
 
         try {
 
@@ -80,17 +81,6 @@ public class MainActivity extends AppCompatActivity {
 
             Log.e("MainActivity", e.getStackTrace().toString());
         }
-    }
-
-    void makerShow(MapView mapView){
-
-        MapPOIItem marker = new MapPOIItem();
-        marker.setItemName("Default Marker");
-        marker.setTag(0);
-        marker.setMapPoint(MapPoint.mapPointWithGeoCoord(latitude, longitude));
-        marker.setMarkerType(MapPOIItem.MarkerType.BluePin);
-        marker.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin); // 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        mapView.addPOIItem(marker);
     }
 
     @Override
