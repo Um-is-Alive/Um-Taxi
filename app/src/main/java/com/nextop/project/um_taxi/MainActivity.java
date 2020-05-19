@@ -23,6 +23,9 @@ import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 
+import com.nextop.project.um_taxi.location.MapEventListener;
+import com.nextop.project.um_taxi.location.MapLocationListener;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -31,7 +34,7 @@ public class MainActivity extends AppCompatActivity {
     private LocationListener locationListener;
     private double latitude = 37.5571992;
     private double longitude = 126.970536;
-
+    private MapEventListener mapEventListener;
 
 
     @Override
@@ -39,8 +42,6 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         this.locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-
-
 
 
         // 안드로이드에서 권한 확인이 의무화 되어서 작성된 코드! 개념만 이해
@@ -63,26 +64,22 @@ public class MainActivity extends AppCompatActivity {
         mapViewContainer.addView(mapView);
 
         //내 위치로 지도 이동
-        mapView.setMapCenterPoint(MapPoint.mapPointWithGeoCoord(latitude, longitude), true);
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        //locationListener = new MapLocationListener(mapView);
+        //locationListener = new MapEventListener(mapView);
 
         makerShow(mapView); //마커 표시 메소드
+        //locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,1000, 1, locationListener);
+        //locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,1000, 1, locationListener);
 
-
-        try {
-
-            PackageInfo info = getPackageManager().getPackageInfo("com.nextop.project.um_taxi", PackageManager.GET_SIGNATURES);
-            for (Signature signature : info.signatures) {
-                MessageDigest md = MessageDigest.getInstance("SHA");
-                md.update(signature.toByteArray());
-                Log.i("KeyHash:", Base64.encodeToString(md.digest(), Base64.DEFAULT));
-            }
-        } catch (Exception e) {
-
-            Log.e("MainActivity", e.getStackTrace().toString());
-        }
+        this.mapEventListener = new MapEventListener();
+        mapView.setMapViewEventListener(this.mapEventListener);
     }
 
     void makerShow(MapView mapView){
+
+
+        mapView.setMapCenterPoint(MapPoint.mapPointWithGeoCoord(latitude, longitude), true);
 
         MapPOIItem marker = new MapPOIItem();
         marker.setItemName("Default Marker");
