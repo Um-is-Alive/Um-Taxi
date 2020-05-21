@@ -35,6 +35,7 @@ import com.nextop.project.um_taxi.models.Document;
 public class MainActivity extends AppCompatActivity {
 
 
+
     private static final int PERMISSION_REQUEST_LOCATION = 10001; //요청 코드
     private LocationManager locationManager; //
     private LocationListener locationListener;
@@ -102,10 +103,17 @@ public class MainActivity extends AppCompatActivity {
                 super.handleMessage(msg);
                 AddressModel address = (AddressModel) msg.obj;
                 TextView Address = (TextView) findViewById(R.id.address);
-                //TextView buildingname = (TextView) findViewById(R.id.);
-                Document document = address.documents.get(0);
-                Address.setText(document.roadAddress.address);
-                //buildingname.setText(document.roadAddress.buildingName);
+                Document document = address.documents.get(0); //road address 도로명
+                if(document.roadAddress.address!=null){
+                    if(document.roadAddress.buildingName!=null){
+                        Address.setText(document.roadAddress.address+" "+document.roadAddress.buildingName + "   R:B");
+                    } else {
+                        Address.setText(document.roadAddress.address+"   R");
+                    }
+                } else {
+                    Address.setText(document.address.address+"   A");
+                }
+
             }
         };
     }

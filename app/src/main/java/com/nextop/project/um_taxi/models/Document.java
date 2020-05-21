@@ -4,4 +4,7 @@ import com.google.api.client.util.Key;
 public class Document {
     @Key("road_address")
     public RoadAddress roadAddress;
+
+    @Key("address")
+    public Address address;
 }

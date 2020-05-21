@@ -20,6 +20,7 @@ public class MapLocationListener implements LocationListener {
     private double latitude;
     private double longitude;
 
+
     public MapLocationListener(MapView map) { this.mapView = map; }
 
     @Override
@@ -51,12 +52,7 @@ public class MapLocationListener implements LocationListener {
         mapView.setMapCenterPoint(MapPoint.mapPointWithGeoCoord(latitude, longitude), true);
         marker = new MapPOIItem();
         marker = mapView.findPOIItemByTag(0);
-        //marker.setItemName("Default Marker");
-        //marker.setTag(0);
         marker.setMapPoint(MapPoint.mapPointWithGeoCoord(latitude, longitude));
-        //marker.setMarkerType(MapPOIItem.MarkerType.BluePin);
-        //marker.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin); // 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        //mapView.addPOIItem(marker);
     }
 
 }
