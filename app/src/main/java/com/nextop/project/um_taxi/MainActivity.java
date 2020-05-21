@@ -10,6 +10,8 @@ import android.content.pm.PackageManager;
 import android.content.pm.Signature;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Base64;
 import android.util.Log;
 import android.view.ViewGroup;
@@ -22,18 +24,23 @@ import net.daum.mf.map.api.MapView;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.widget.TextView;
 
+import com.nextop.project.um_taxi.location.MapEventListener;
 import com.nextop.project.um_taxi.location.MapLocationListener;
+import com.nextop.project.um_taxi.models.AddressModel;
+import com.nextop.project.um_taxi.models.Document;
 
 
 public class MainActivity extends AppCompatActivity {
+
 
     private static final int PERMISSION_REQUEST_LOCATION = 10001; //요청 코드
     private LocationManager locationManager; //
     private LocationListener locationListener;
     private double latitude = 37.5571992;
     private double longitude = 126.970536;
-
+    private MapEventListener mapEventListener;
 
 
     @Override
@@ -41,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         this.locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+
 
         // 안드로이드에서 권한 확인이 의무화 되어서 작성된 코드! 개념만 이해
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -50,6 +58,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
         }
+
 
         Location loc = this.locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
         latitude = loc.getLatitude();
@@ -61,26 +70,44 @@ public class MainActivity extends AppCompatActivity {
         mapViewContainer.addView(mapView);
 
         //내 위치로 지도 이동
-        LocationManager mLM = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        MapLocationListener mll = new MapLocationListener(mapView);
+        locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        //locationListener = new MapLocationListener(mapView);
+        //locationListener = new MapEventListener(mapView);
 
-        mLM.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,
-                1000, 1, mll);
-        mLM.requestLocationUpdates(LocationManager.GPS_PROVIDER,
-                1000, 1, mll);
+        makerShow(mapView); //마커 표시 메소드
+        //locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER,1000, 1, locationListener);
+        //locationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER,1000, 1, locationListener);
+        Handler handler = makeHandler();
+        this.mapEventListener = new MapEventListener(handler);
+        mapView.setMapViewEventListener(this.mapEventListener);
+    }
 
-        try {
+    void makerShow(MapView mapView){
 
-            PackageInfo info = getPackageManager().getPackageInfo("com.nextop.project.um_taxi", PackageManager.GET_SIGNATURES);
-            for (Signature signature : info.signatures) {
-                MessageDigest md = MessageDigest.getInstance("SHA");
-                md.update(signature.toByteArray());
-                Log.i("KeyHash:", Base64.encodeToString(md.digest(), Base64.DEFAULT));
+
+        mapView.setMapCenterPoint(MapPoint.mapPointWithGeoCoord(latitude, longitude), true);
+
+        MapPOIItem marker = new MapPOIItem();
+        marker.setItemName("Default Marker");
+        marker.setTag(0);
+        marker.setMapPoint(MapPoint.mapPointWithGeoCoord(latitude, longitude));
+        marker.setMarkerType(MapPOIItem.MarkerType.BluePin);
+        marker.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin); // 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
+        mapView.addPOIItem(marker);
+    }
+    private Handler makeHandler() {
+        return new Handler() {
+            @Override
+            public void handleMessage(@NonNull Message msg) {
+                super.handleMessage(msg);
+                AddressModel address = (AddressModel) msg.obj;
+                TextView Address = (TextView) findViewById(R.id.address);
+                //TextView buildingname = (TextView) findViewById(R.id.);
+                Document document = address.documents.get(0);
+                Address.setText(document.roadAddress.address);
+                //buildingname.setText(document.roadAddress.buildingName);
             }
-        } catch (Exception e) {
-
-            Log.e("MainActivity", e.getStackTrace().toString());
-        }
+        };
     }
 
     @Override
@@ -99,4 +126,6 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
     }
+
+
 }

@@ -1,0 +1,10 @@
+diff a/app/src/main/java/com/nextop/project/um_taxi/MainActivity.java b/app/src/main/java/com/nextop/project/um_taxi/MainActivity.java	(rejected hunks)
+@@ -23,6 +23,8 @@
+ import android.location.LocationListener;
+ import android.location.LocationManager;
+ 
++import com.nextop.project.um_taxi.location.MapLocationListener;
++
+ 
+ public class MainActivity extends AppCompatActivity {
+ 

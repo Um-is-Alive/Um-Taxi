@@ -1,55 +1,62 @@
 package com.nextop.project.um_taxi.location;
 
-import android.content.Context;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.view.View;
+import android.view.ViewGroup;
+
+import com.nextop.project.um_taxi.MainActivity;
+import com.nextop.project.um_taxi.R;
 
 import net.daum.mf.map.api.MapPOIItem;
 import net.daum.mf.map.api.MapPoint;
 import net.daum.mf.map.api.MapView;
 
-import static androidx.core.content.ContextCompat.getSystemService;
-
 public class MapLocationListener implements LocationListener {
 
-    MapView mv;
+    private MapView mapView;
+    private double latitude;
+    private double longitude;
 
-    public MapLocationListener(MapView tmp){
-        mv = tmp;
-    }
+    public MapLocationListener(MapView map) { this.mapView = map; }
 
     @Override
     public void onLocationChanged(Location location) {
-        double latitude = location.getLatitude();
-        double longitude = location.getLongitude();
+        latitude = location.getLatitude();
+        longitude = location.getLongitude();
 
-        mv.setMapCenterPoint(MapPoint.mapPointWithGeoCoord(latitude, longitude), true);
-        makerShow(mv,latitude,longitude);
-    }
-
-    @Override
-    public void onProviderDisabled(String provider) {
-    }
-
-    @Override
-    public void onProviderEnabled(String provider) {
+        //내 위치로 지도 이동
+        mapView.setMapCenterPoint(MapPoint.mapPointWithGeoCoord(latitude, longitude), true);
+        MapPOIItem marker = new MapPOIItem();
+        makermMove(marker);
     }
 
     @Override
     public void onStatusChanged(String provider, int status, Bundle extras) {
+
     }
 
-    void makerShow(MapView mapView, double lat,double lon){
+    @Override
+    public void onProviderEnabled(String provider) {
 
-        MapPOIItem marker = new MapPOIItem();
-        marker.setItemName("Default Marker");
-        marker.setTag(0);
-        marker.setMapPoint(MapPoint.mapPointWithGeoCoord(lat, lon));
-        marker.setMarkerType(MapPOIItem.MarkerType.BluePin);
-        marker.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin); // 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
-        mapView.addPOIItem(marker);
+    }
+
+    @Override
+    public void onProviderDisabled(String provider) {
+
+    }
+    private void makermMove(MapPOIItem marker){
+        mapView.setMapCenterPoint(MapPoint.mapPointWithGeoCoord(latitude, longitude), true);
+        marker = new MapPOIItem();
+        marker = mapView.findPOIItemByTag(0);
+        //marker.setItemName("Default Marker");
+        //marker.setTag(0);
+        marker.setMapPoint(MapPoint.mapPointWithGeoCoord(latitude, longitude));
+        //marker.setMarkerType(MapPOIItem.MarkerType.BluePin);
+        //marker.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin); // 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
+        //mapView.addPOIItem(marker);
     }
 
 }
