@@ -29,7 +29,9 @@ import android.widget.TextView;
 import com.nextop.project.um_taxi.location.MapEventListener;
 import com.nextop.project.um_taxi.location.MapLocationListener;
 import com.nextop.project.um_taxi.models.AddressModel;
+import com.nextop.project.um_taxi.models.DisplayItem;
 import com.nextop.project.um_taxi.models.Document;
+import com.nextop.project.um_taxi.models.RoadAddress;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -101,17 +103,23 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void handleMessage(@NonNull Message msg) {
                 super.handleMessage(msg);
-                AddressModel address = (AddressModel) msg.obj;
+                DisplayItem item = (DisplayItem) msg.obj;
+                AddressModel address = item.addressModel;
                 TextView Address = (TextView) findViewById(R.id.address);
-                Document document = address.documents.get(0); //road address 도로명
-                if(document.roadAddress.address!=null){
-                    if(document.roadAddress.buildingName!=null){
-                        Address.setText(document.roadAddress.address+" "+document.roadAddress.buildingName + "   R:B");
+                TextView lat = (TextView) findViewById(R.id.latitude);
+                TextView lng  = (TextView) findViewById(R.id.longitude);
+                lat.setText(item.latitude.toString());
+                lng.setText(item.longitude.toString());
+                if(address.documents.size() > 0) {
+                    Document document = address.documents.get(0); //road address 도로명
+                    if (document.roadAddress.address != null) {
+                        RoadAddress roadAddress = document.roadAddress;
+                        String displayAddress = roadAddress.buildingName == null ? roadAddress.address + "  R" : roadAddress.address + " " + roadAddress.buildingName + "   RB";
+                        Address.setText(displayAddress);
+
                     } else {
-                        Address.setText(document.roadAddress.address+"   R");
+                        Address.setText(document.address.address + "");
                     }
-                } else {
-                    Address.setText(document.address.address+"   A");
                 }
 
             }

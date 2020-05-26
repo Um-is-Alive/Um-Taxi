@@ -17,6 +17,7 @@ import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonObjectParser;
 import com.google.api.client.json.jackson2.JacksonFactory;
 import com.nextop.project.um_taxi.models.AddressModel;
+import com.nextop.project.um_taxi.models.DisplayItem;
 
 public class AddressRequester implements Runnable {
     private Handler handler;
@@ -46,9 +47,17 @@ public class AddressRequester implements Runnable {
             HttpRequest request = requestFactory.buildGetRequest(url).setHeaders(headers);
             AddressModel addressModel = request.execute().parseAs(AddressModel.class);
 
+            DisplayItem item = new DisplayItem();
+            item.addressModel = addressModel;
+            item.latitude = this.lat;
+            item.longitude = this.lng;
+
+
             Message message = this.handler.obtainMessage();
-            message.obj = addressModel;
+            message.obj = item;
+            //message.obj = addressModel;
             this.handler.sendMessage(message);
+
         } catch (Exception ex) {
             Log.e("HTTP_REQUEST", ex.toString());
         }
