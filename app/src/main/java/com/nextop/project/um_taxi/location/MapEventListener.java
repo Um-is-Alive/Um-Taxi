@@ -17,7 +17,6 @@ public class MapEventListener implements MapView.MapViewEventListener{
     @Override
     public void onMapViewInitialized(MapView mapView) {
 
-
     }
 
     @Override

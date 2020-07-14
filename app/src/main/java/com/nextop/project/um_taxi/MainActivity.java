@@ -14,9 +14,8 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.Base64;
 import android.util.Log;
+import android.view.View;
 import android.view.ViewGroup;
-
-import java.security.MessageDigest;
 
 import net.daum.mf.map.api.MapPOIItem;
 import net.daum.mf.map.api.MapPoint;
@@ -24,14 +23,19 @@ import net.daum.mf.map.api.MapView;
 import android.location.Location;
 import android.location.LocationListener;
 import android.location.LocationManager;
+import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import com.nextop.project.um_taxi.dto.EstimateResultDto;
+import com.nextop.project.um_taxi.dto.MatchDto;
 import com.nextop.project.um_taxi.location.MapEventListener;
-import com.nextop.project.um_taxi.location.MapLocationListener;
 import com.nextop.project.um_taxi.models.AddressModel;
 import com.nextop.project.um_taxi.models.DisplayItem;
 import com.nextop.project.um_taxi.models.Document;
-import com.nextop.project.um_taxi.models.RoadAddress;
+
+import java.security.MessageDigest;
+import java.text.DecimalFormat;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -41,13 +45,32 @@ public class MainActivity extends AppCompatActivity {
     private static final int PERMISSION_REQUEST_LOCATION = 10001; //요청 코드
     private LocationManager locationManager; //
     private LocationListener locationListener;
+    private MapEventListener mapEventListener;
+    private boolean isSelectDeparture =true;
+    private boolean isSelectDone =false;
+    private MatchDto match = new MatchDto();
     private double latitude = 37.5571992;
     private double longitude = 126.970536;
-    private MapEventListener mapEventListener;
 
+    private void getAppKeyHash() {
+        try {
+            PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), PackageManager.GET_SIGNATURES);
+            for (Signature signature : info.signatures) {
+                MessageDigest md;
+                md = MessageDigest.getInstance("SHA");
+                md.update(signature.toByteArray());
+                String something = new String(Base64.encode(md.digest(), 0));
+                Log.e("Hash key", something);
+            }
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            Log.e("name not found", e.toString());
+        }
+    }
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        getAppKeyHash();
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         this.locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
@@ -98,27 +121,60 @@ public class MainActivity extends AppCompatActivity {
         marker.setSelectedMarkerType(MapPOIItem.MarkerType.RedPin); // 마커를 클릭했을때, 기본으로 제공하는 RedPin 마커 모양.
         mapView.addPOIItem(marker);
     }
+
+    private Handler makeEstimateHandler(){
+        return new Handler() {
+            @Override
+            public void handleMessage(@NonNull Message msg) {
+                super.handleMessage(msg);
+                EstimateResultDto result = (EstimateResultDto) msg.obj;
+                TextView distance = findViewById(R.id.estimate_distance);
+                TextView time = findViewById(R.id.estimate_time);
+                TextView cost = findViewById(R.id.estimate_cost);
+                DecimalFormat distanceFormat = new DecimalFormat("##.00km");
+                distance.setText(distanceFormat.format(result.estimateDistance));
+                time.setText(result.estimateTime + "분");
+                cost.setText(result.estimateCost+"원");
+
+                LinearLayout matchView = findViewById(R.id.match_view);
+                matchView.setVisibility(View.VISIBLE);
+
+            }
+        };
+    }
+
+
     private Handler makeHandler() {
         return new Handler() {
             @Override
             public void handleMessage(@NonNull Message msg) {
                 super.handleMessage(msg);
-                DisplayItem item = (DisplayItem) msg.obj;
-                AddressModel address = item.addressModel;
-                TextView Address = (TextView) findViewById(R.id.address);
-                TextView lat = (TextView) findViewById(R.id.latitude);
-                TextView lng  = (TextView) findViewById(R.id.longitude);
-                lat.setText(item.latitude.toString());
-                lng.setText(item.longitude.toString());
+                TextView position;
+                if(isSelectDone) return;
+                DisplayItem displayItem = (DisplayItem) msg.obj;
+                AddressModel address = displayItem.addressModel;
+
+                if(isSelectDeparture){
+                    position = findViewById(R.id.departure);
+                    match.startLatitude = displayItem.latitude;
+                    match.startLongitude = displayItem.longitude;
+                } else {
+                    position = findViewById(R.id.arrival);
+                    match.endLatitude = displayItem.latitude;
+                    match.endLongitude = displayItem.longitude;
+                }
+
+
                 if(address.documents.size() > 0) {
                     Document document = address.documents.get(0); //road address 도로명
-                    if (document.roadAddress.address != null) {
-                        RoadAddress roadAddress = document.roadAddress;
-                        String displayAddress = roadAddress.buildingName == null ? roadAddress.address + "  R" : roadAddress.address + " " + roadAddress.buildingName + "   RB";
-                        Address.setText(displayAddress);
-
+                    if (document.roadAddress != null && document.roadAddress.addressName != null) {
+                        if(document.roadAddress.buildingName != null && document.roadAddress.buildingName.length() > 0){
+                            position.setText(document.roadAddress.buildingName);
+                        } else {
+                            position.setText(document.roadAddress.addressName);
+                        }
                     } else {
-                        Address.setText(document.address.address + "");
+                        position.setText(document.address.addressName);
                     }
                 }
 
@@ -144,4 +200,48 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
+    public void toggleDepartureSelect(View clicked) {
+        LinearLayout estimateView = findViewById(R.id.estimate_view);
+        estimateView.setVisibility(View.GONE);
+        this.isSelectDone = false;
+        Button arrivalButton = findViewById(R.id.arrival_select);
+        Button arrivalResetButton = findViewById(R.id.arrival_select_reset);
+        if(clicked.getId() == R.id.departure_select){
+            this.isSelectDeparture = false;
+            Button resetButton = findViewById(R.id.arrival_select_reset);
+            resetButton.setVisibility(View.VISIBLE);
+            arrivalButton.setVisibility(View.VISIBLE);
+            clicked.setVisibility(View.GONE);
+        } else {
+            this.isSelectDeparture = true;
+            Button departureButton = findViewById(R.id.departure_select);
+            departureButton.setVisibility(View.VISIBLE);
+            arrivalButton.setVisibility(View.INVISIBLE);
+            arrivalResetButton.setVisibility(View.GONE);
+            clicked.setVisibility(View.GONE);
+        }
+    }
+
+    public void toggleArrivalSelect(View clicked) {
+        LinearLayout estimateView = findViewById(R.id.estimate_view);
+        if(clicked.getId() == R.id.arrival_select){
+            this.isSelectDone = true;
+            Button arrivalButton = findViewById(R.id.arrival_select);
+            arrivalButton.setVisibility(View.VISIBLE);
+            clicked.setVisibility(View.GONE);
+            estimateView.setVisibility(View.GONE);
+        }
+    }
+
+    public void estimate(View view) {
+        Handler handler = this.makeEstimateHandler();
+        EstimateRequester requester = new EstimateRequester(
+                match.startLatitude,
+                match.endLongitude,
+                match.endLatitude,
+                match.endLongitude,
+                handler);
+        Thread request = new Thread(requester);
+        request.start();
+    }
 }

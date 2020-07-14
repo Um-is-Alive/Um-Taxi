@@ -1,12 +1,8 @@
 package com.nextop.project.um_taxi;
 
-import android.app.Activity;
-import android.content.Context;
-import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
-import android.widget.TextView;
 
 import com.google.api.client.http.GenericUrl;
 import com.google.api.client.http.HttpHeaders;
@@ -16,18 +12,27 @@ import com.google.api.client.http.HttpRequestInitializer;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.JsonObjectParser;
 import com.google.api.client.json.jackson2.JacksonFactory;
+import com.nextop.project.um_taxi.dto.EstimateResultDto;
 import com.nextop.project.um_taxi.models.AddressModel;
 import com.nextop.project.um_taxi.models.DisplayItem;
 
-public class AddressRequester implements Runnable {
-    private Handler handler;
-    private Double lat;
-    private Double lng;
+public class EstimateRequester implements Runnable {
 
-    public AddressRequester(Double lat, Double lng, Handler handler) {
-        this.lat = lat;
-        this.lng = lng;
+
+
+    private Handler handler;
+    private Double startLatitude; //내 위치
+    private Double startLongitude;
+    private Double endLatitude; //가고 싶은데 위치
+    private Double endLongitude;
+
+    EstimateRequester(double startLatitude, double startLongitude, double endLatitude, double endLongitude , Handler handler){
+        this.startLatitude = startLatitude;
+        this.startLongitude = startLongitude;
+        this.endLatitude = endLatitude;
+        this.endLongitude = endLongitude;
         this.handler = handler;
+
     }
 
     @Override
@@ -40,26 +45,24 @@ public class AddressRequester implements Runnable {
                             request.setParser(new JsonObjectParser(new JacksonFactory()));
                         }
                     });
-            String urlString = String.format("https://dapi.kakao.com/v2/local/geo/coord2address.json?x=%s&y=%s", this.lng.toString(), this.lat.toString());
+            String urlString = String.format("http://192.168.0.19:8080/estimate?startLatitude=%s&startLongitude=%s&endLatitude=%s&endLongitude=%s"
+                    ,this.startLatitude.toString(),this.startLongitude.toString(),this.endLatitude.toString(),this.endLongitude.toString());
             GenericUrl url = new GenericUrl(urlString);
             HttpHeaders headers = new HttpHeaders();
-            headers.setAuthorization("KakaoAK c858872f33aaa144527256e01fbc091c");
+            //headers.setAuthorization("KakaoAK bb2f0216caf115b2348f23a520d32418");
             HttpRequest request = requestFactory.buildGetRequest(url).setHeaders(headers);
-            AddressModel addressModel = request.execute().parseAs(AddressModel.class);
 
-            DisplayItem item = new DisplayItem();
-            item.addressModel = addressModel;
-            item.latitude = this.lat;
-            item.longitude = this.lng;
+            EstimateResultDto estimateResult = request.execute().parseAs(EstimateResultDto.class);
 
 
             Message message = this.handler.obtainMessage();
-            message.obj = item;
+            message.obj = estimateResult;
             //message.obj = addressModel;
             this.handler.sendMessage(message);
 
         } catch (Exception ex) {
             Log.e("HTTP_REQUEST", ex.toString());
         }
+
     }
 }
