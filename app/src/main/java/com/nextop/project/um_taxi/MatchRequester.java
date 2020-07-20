@@ -5,28 +5,27 @@ import android.os.Message;
 import android.util.Log;
 
 import com.google.api.client.http.GenericUrl;
+import com.google.api.client.http.HttpContent;
 import com.google.api.client.http.HttpRequest;
 import com.google.api.client.http.HttpRequestFactory;
 import com.google.api.client.http.HttpRequestInitializer;
+import com.google.api.client.http.HttpResponseException;
 import com.google.api.client.http.javanet.NetHttpTransport;
+import com.google.api.client.http.json.JsonHttpContent;
 import com.google.api.client.json.JsonObjectParser;
 import com.google.api.client.json.jackson2.JacksonFactory;
-import com.nextop.project.um_taxi.dto.EstimateResultDto;
+import com.nextop.project.um_taxi.dto.MatchDto;
+import com.nextop.project.um_taxi.dto.MatchResultDto;
 
-public class EstimateRequester implements Runnable {
+public class MatchRequester implements Runnable {
     private Handler handler;
-    private Double startLatitude;
-    private Double startLongitude;
-    private Double endLatitude;
-    private Double endLongitude;
+    private MatchDto match;
+    private Handler failHandler;
 
-
-    public EstimateRequester(Double startLatitude, Double startLongitude, Double endLatitude, Double endLongitude, Handler handler) {
+    public MatchRequester(MatchDto match, Handler handler, Handler failHandler) {
         this.handler = handler;
-        this.startLatitude = startLatitude;
-        this.startLongitude = startLongitude;
-        this.endLatitude = endLatitude;
-        this.endLongitude = endLongitude;
+        this.match = match;
+        this.failHandler = failHandler;
     }
 
     @Override
@@ -39,18 +38,22 @@ public class EstimateRequester implements Runnable {
                             request.setParser(new JsonObjectParser(new JacksonFactory()));
                         }
                     });
-            String urlString = String.format("http://192.168.35.29:8080/estimate?startLatitude=%s&startLongitude=%s&endLatitude=%s&endLongitude=%s",
-                    this.startLatitude.toString(), this.startLongitude.toString(), this.endLatitude.toString(), this.endLongitude.toString());
+            String urlString = String.format("http://192.168.35.29:8080/taxis/match");
             GenericUrl url = new GenericUrl(urlString);
-            HttpRequest request = requestFactory.buildGetRequest(url);
-            EstimateResultDto estimateResult = request.execute().parseAs(EstimateResultDto.class);
+            HttpContent content = new JsonHttpContent(new JacksonFactory(), this.match);
+            HttpRequest request = requestFactory.buildPostRequest(url, content);
+            MatchResultDto matchResult = request.execute().parseAs(MatchResultDto.class);
 
             Message message = this.handler.obtainMessage();
-            message.obj = estimateResult;
+            message.obj = matchResult;
             this.handler.sendMessage(message);
 
         } catch (Exception ex) {
             Log.e("HTTP_REQUEST", ex.toString());
+            Message message = this.failHandler.obtainMessage();
+            HttpResponseException responseException = (HttpResponseException) ex;
+            message.what = responseException.getStatusCode();
+            this.failHandler.sendMessage(message);
         }
     }
 }

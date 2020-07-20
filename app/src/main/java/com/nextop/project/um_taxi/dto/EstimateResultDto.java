@@ -1,8 +1,10 @@
 package com.nextop.project.um_taxi.dto;
 
+import com.google.api.client.util.Key;
+
 public class EstimateResultDto {
 
-    public double estimateDistance;
-    public int estimateTime;
-    public int estimateCost;
+    @Key() public double estimateDistance;
+    @Key() public int estimateTime;
+    @Key() public int estimateCost;
 }

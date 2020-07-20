@@ -4,6 +4,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.annotation.NonNull;
 
 import android.Manifest;
+import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -29,6 +31,7 @@ import android.widget.TextView;
 
 import com.nextop.project.um_taxi.dto.EstimateResultDto;
 import com.nextop.project.um_taxi.dto.MatchDto;
+import com.nextop.project.um_taxi.dto.MatchResultDto;
 import com.nextop.project.um_taxi.location.MapEventListener;
 import com.nextop.project.um_taxi.models.AddressModel;
 import com.nextop.project.um_taxi.models.DisplayItem;
@@ -36,6 +39,7 @@ import com.nextop.project.um_taxi.models.Document;
 
 import java.security.MessageDigest;
 import java.text.DecimalFormat;
+import java.util.regex.MatchResult;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -226,6 +230,13 @@ public class MainActivity extends AppCompatActivity {
         LinearLayout estimateView = findViewById(R.id.estimate_view);
         if(clicked.getId() == R.id.arrival_select){
             this.isSelectDone = true;
+            Button arrivalButton = findViewById(R.id.arrival_select_reset);
+            arrivalButton.setVisibility(View.VISIBLE);
+            clicked.setVisibility(View.GONE);
+            estimateView.setVisibility(View.VISIBLE);
+        }
+        else {
+            this.isSelectDone =false;
             Button arrivalButton = findViewById(R.id.arrival_select);
             arrivalButton.setVisibility(View.VISIBLE);
             clicked.setVisibility(View.GONE);
@@ -242,6 +253,60 @@ public class MainActivity extends AppCompatActivity {
                 match.endLongitude,
                 handler);
         Thread request = new Thread(requester);
+        request.start();
+    }
+
+    private Handler matchMatchHandler(){
+        return new Handler() {
+            @Override
+            public void handleMessage(@NonNull Message msg){
+                super.handleMessage(msg);
+                MatchResultDto result = (MatchResultDto) msg.obj;
+                TextView matchDriver = findViewById(R.id.match_driver);
+                TextView matchTaxi = findViewById(R.id.arrival_time);
+                TextView arrivalTime = findViewById(R.id.arrival_time);
+                matchDriver.setText(result.driver);
+                matchTaxi.setText(result.taxiNumber);
+                arrivalTime.setText(result.arrivalTime+"분");
+
+
+            }
+        };
+    }
+
+
+
+    private Handler makeMatchFailedHandler(){
+        final Activity activity = this;
+        return new Handler(){
+            @Override
+            public void handleMessage (@NonNull Message msg) {
+                super.handleMessage(msg);
+                AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+                switch (msg.what){
+                    case 401:
+                        builder.setTitle("인증 실패").setMessage("올바른 사용자가 아닙니다.");
+                        break;
+                    case 404:
+                        builder.setTitle("제품 실패").setMessage("배정 가능한 택시가 없습니다.");
+                        break;
+                    default:
+                        builder.setTitle("오류").setMessage("오류가 발생했습니다.");
+                        break;
+                }
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+        };
+    }
+
+    public void match(View view){
+        Handler handler = this.matchMatchHandler();
+        Handler failHandler = this.makeMatchFailedHandler();
+        this.match.limitTime = 5;
+        this.match.userId =46;
+        MatchRequester requester = new MatchRequester(this.match, handler,failHandler);
+        Thread request = new Thread(requester) ;
         request.start();
     }
 }
